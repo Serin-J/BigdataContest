@@ -1,3 +1,6 @@
+rm(list = ls())
+gc()
+
 # 한국 mapdata에서 서울만 추출
 library(sf)
 library(maptools)
@@ -26,6 +29,8 @@ st_write(seoulmap, "./data/contest/seoul.shp",
          delete_dsn = T, layer_options = "ENCODING=UTF-8",
          delete_layer = T)
 
+
+
 seoulmap = st_read("./data/contest/seoul.shp", stringsAsFactors = F)
 Encoding(seoulmap$SIG_KOR_NM) = "CP949"
 
@@ -45,7 +50,6 @@ ggplot(data = seoulmap_df) +
 
 #좌표계 변경(위경도 좌표계로)
 library(sp)
-library
 str(seoulmap_sp)
 seoulmap_longlat = spTransform(seoulmap_sp,  
                                CRS("+proj=longlat"))
@@ -74,11 +78,44 @@ empty_theme = theme(legend.position = "right",
                     axis.ticks = element_blank(),
                     panel.background = element_blank()) 
 
+mean_longlat[1, 2] = mean_longlat[1, 2] - 0.01
+mean_longlat[2, 2] = mean_longlat[2, 2] - 0.015
+mean_longlat[4, 2] = mean_longlat[4, 2] + 0.015
+mean_longlat[6, 2] = mean_longlat[6, 2] - 0.005 
+mean_longlat[7, 3] = mean_longlat[7, 3] + 0.006
+mean_longlat[8, 2] = mean_longlat[8, 2] + 0.002
+mean_longlat[9, 2] = mean_longlat[9, 2] + 0.007
+mean_longlat[9, 3] = mean_longlat[9, 3] + 0.01
+mean_longlat[10, 3] = mean_longlat[10, 3] + 0.01
+mean_longlat[11, 3] = mean_longlat[11, 3] - 0.005
+mean_longlat[12, 3] = mean_longlat[12, 3] + 0.008
+mean_longlat[13, 2] = mean_longlat[13, 2] - 0.012
+mean_longlat[14, 2] = mean_longlat[14, 2] - 0.011
+mean_longlat[15, 3] = mean_longlat[15, 3] + 0.008
+mean_longlat[16, 2] = mean_longlat[16, 2] + 0.02
+mean_longlat[17, 3] = mean_longlat[17, 3] - 0.003
+mean_longlat[19, 2] = mean_longlat[19, 2] - 0.01
+mean_longlat[19, 3] = mean_longlat[19, 3] - 0.007
+mean_longlat[20, 2] = mean_longlat[20, 2] + 0.02
+mean_longlat[21, 3] = mean_longlat[21, 3] - 0.01
+mean_longlat[23, 3] = mean_longlat[23, 3] + 0.005
+mean_longlat[24, 3] = mean_longlat[24, 3] - 0.002
+mean_longlat[25, 3] = mean_longlat[25, 3] - 0.011
 
-seoul = ggplot(data = seoullonglat) + 
+seoul_gu_center = mean_longlat
+seoul_gu_center$group = as.character(seoul_gu_center$group)
+?Encoding
+?write.csv
+write.csv(seoul_gu_center, "./data/contest/seoul_gu_center.csv", fileEncoding = "CP949")
+
+seoul_gu_center = read.csv("./data/contest/seoul_gu_center.csv", encoding = "CP949")
+
+
+
+ggplot(data = seoullonglat) + 
   geom_polygon(aes(x = long, y= lat, group = group),
                fill = "grey", col = "white") +
-  geom_text(data = mean_longlat, aes(label = group, x = long, y = lat), 
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8) +
   empty_theme
 
@@ -106,7 +143,7 @@ ggplot(data = seoullonglat) +
   geom_polygon(aes(x = long, y= lat, group = group),
                fill = "grey", col = "white") + 
   geom_point(data = ddarung, aes(x = 경도, y = 위도), col = "red", alpha = 0.7) +
-  geom_text(data = mean_longlat, aes(label = group, x = long, y = lat), 
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8) +
   empty_theme 
 summary(ddarung)
@@ -125,7 +162,7 @@ ggplot(data = seoullonglat) +
   geom_polygon(aes(x = long, y= lat, group = group),
                fill = "lightgrey", col = "white") + 
   geom_point(data = ddarung, aes(x = 경도, y = 위도, col = size), size = 2) +
-  geom_text(data = mean_longlat, aes(label = group, x = long, y = lat), 
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8) +
   theme(legend.text = element_text(size = 8), 
         axis.title = element_blank(),
