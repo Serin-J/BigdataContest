@@ -2,13 +2,12 @@ rm(list = ls())
 gc()
 
 # 한국 mapdata에서 서울만 추출
+{
+  
 library(sf)
 library(maptools)
 list.files("./sigungu_mapdata")
 
-Sys.getlocale()
-Sys.setlocale(category = "LC_ALL", "CP949")
-?Sys.setlocale
 si_gun_gu = st_read("./sigungu_mapdata/TL_SCCO_SIG.shp",
                     stringsAsFactors= F)
 str(si_gun_gu)
@@ -17,6 +16,7 @@ str(si_gun_gu)
 Encoding(si_gun_gu$SIG_KOR_NM) = "CP949"
 head(si_gun_gu)
 plot(si_gun_gu)
+
 
 library(dplyr)
 
@@ -29,34 +29,39 @@ st_write(seoulmap, "./data/contest/seoul.shp",
          delete_dsn = T, layer_options = "ENCODING=UTF-8",
          delete_layer = T)
 
+}
 
+##############################################################################
+# 여기서부터 돌리면 됨
+library(sf)
+library(maptools)
+library(ggplot2)
+library(sp)
+library(dplyr)
 
 seoulmap = st_read("./data/contest/seoul.shp", stringsAsFactors = F)
 Encoding(seoulmap$SIG_KOR_NM) = "CP949"
 
 seoul = seoulmap %>% select(SIG_KOR_NM)
+
 ############################################
 # 서울 지도
 seoulmap_sp = as(seoul, "Spatial")
-class(seoulmap_sp)
-seoulmap_df = fortify(seoulmap_sp)
-head(seoulmap_df)
-str(seoulmap_df)
-levels(seoulmap_df$group) = seoulmap$SIG_KOR_NM
-ggplot(data = seoulmap_df) + 
-  geom_polygon(aes(x = long, y = lat, group = group,
-                   fill = group), col = "white")
 
+seoulmap_df = fortify(seoulmap_sp)
+levels(seoulmap_df$group) = seoulmap$SIG_KOR_NM
 
 #좌표계 변경(위경도 좌표계로)
-library(sp)
+
 str(seoulmap_sp)
 seoulmap_longlat = spTransform(seoulmap_sp,  
                                CRS("+proj=longlat"))
 str(seoulmap_longlat)
 seoullonglat = fortify(seoulmap_longlat)
 
-# 서울시 구 이름 표시
+# 서울시 구 이름 표시(돌릴 때는 생략)
+{
+  
 levels(seoullonglat$group) = seoul$SIG_KOR_NM
 
 mean(seoullonglat$long)
@@ -69,14 +74,6 @@ mean_lat = aggregate(formula = lat~group, data = seoullonglat,
 
 mean_longlat = merge(mean_long, mean_lat, by_x = group)
 
-
-empty_theme = theme(legend.position = "right",
-                    legend.title = element_blank(),
-                    legend.text = element_text(size = 8),
-                    axis.title = element_blank(),
-                    axis.text = element_blank(),
-                    axis.ticks = element_blank(),
-                    panel.background = element_blank()) 
 
 mean_longlat[1, 2] = mean_longlat[1, 2] - 0.01
 mean_longlat[2, 2] = mean_longlat[2, 2] - 0.015
@@ -108,16 +105,33 @@ seoul_gu_center$group = as.character(seoul_gu_center$group)
 ?write.csv
 write.csv(seoul_gu_center, "./data/contest/seoul_gu_center.csv", fileEncoding = "CP949")
 
+
+}
+
+#서울시 지도(구이름 표시)
+
 seoul_gu_center = read.csv("./data/contest/seoul_gu_center.csv", encoding = "CP949")
 
 
 
+empty_theme = theme(legend.position = "right",
+                    legend.title = element_blank(),
+                    legend.text = element_text(size = 8),
+                    axis.title = element_blank(),
+                    axis.text = element_blank(),
+                    axis.ticks = element_blank(),
+                    panel.background = element_blank()) 
+
+# 흑백 버전
 ggplot(data = seoullonglat) + 
   geom_polygon(aes(x = long, y= lat, group = group),
                fill = "grey", col = "white") +
   geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8) +
   empty_theme
+
+
+# 컬러 버전
 
 ggplot(data = seoullonglat) + 
   geom_polygon(aes(x = long, y= lat, group = group, fill = group),
@@ -126,19 +140,17 @@ ggplot(data = seoullonglat) +
 
 
 
-
-
 #######################################################
 # 따릉이 위치정보
-list.files("./data/contest")
 ddarung = read.csv("./data/contest/공공자전거 대여소 정보_201905.csv",
                    sep = ",", header = T,fileEncoding = "UTF-8",
                    stringsAsFactors = F)
-?read.csv
 head(ddarung)
 str(ddarung)
 
 ggplot() + geom_point(data = ddarung, aes(x = 경도, y = 위도), size = 5)
+
+
 ggplot(data = seoullonglat) + 
   geom_polygon(aes(x = long, y= lat, group = group),
                fill = "grey", col = "white") + 
@@ -150,6 +162,7 @@ summary(ddarung)
 
 
 # 거치대 수 고려
+
 library(RColorBrewer)
 display.brewer.all()
 pal = brewer.pal(7, "OrRd")
