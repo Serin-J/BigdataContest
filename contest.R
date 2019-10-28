@@ -44,20 +44,14 @@ Encoding(seoulmap$SIG_KOR_NM) = "CP949"
 
 seoul = seoulmap %>% select(SIG_KOR_NM)
 
-############################################
-# 서울 지도
 seoulmap_sp = as(seoul, "Spatial")
 
-seoulmap_df = fortify(seoulmap_sp)
-levels(seoulmap_df$group) = seoulmap$SIG_KOR_NM
-
-#좌표계 변경(위경도 좌표계로)
-
-str(seoulmap_sp)
 seoulmap_longlat = spTransform(seoulmap_sp,  
                                CRS("+proj=longlat"))
-str(seoulmap_longlat)
 seoullonglat = fortify(seoulmap_longlat)
+
+levels(seoullonglat$group) = seoul$SIG_KOR_NM
+
 
 # 서울시 구 이름 표시(돌릴 때는 생략)
 {
@@ -122,14 +116,6 @@ empty_theme = theme(legend.position = "right",
                     axis.ticks = element_blank(),
                     panel.background = element_blank()) 
 
-# 흑백 버전
-ggplot(data = seoullonglat) + 
-  geom_polygon(aes(x = long, y= lat, group = group),
-               fill = "grey", col = "white") +
-  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
-            size = 2.8) +
-  empty_theme
-
 
 # 컬러 버전
 
@@ -139,6 +125,15 @@ ggplot(data = seoullonglat) +
   empty_theme
 
 
+# 흑백 버전
+seoulmap = ggplot(data = seoullonglat) + 
+  geom_polygon(aes(x = long, y= lat, group = group),
+               fill = "grey", col = "white") + empty_theme
+
+seoulmap +
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
+            size = 2.8) 
+  
 
 #######################################################
 # 따릉이 위치정보
@@ -148,21 +143,15 @@ ddarung = read.csv("./data/contest/공공자전거 대여소 정보_201905.csv",
 head(ddarung)
 str(ddarung)
 
-ggplot() + geom_point(data = ddarung, aes(x = 경도, y = 위도), size = 5)
-
-
-ggplot(data = seoullonglat) + 
-  geom_polygon(aes(x = long, y= lat, group = group),
-               fill = "grey", col = "white") + 
+seoulmap + 
   geom_point(data = ddarung, aes(x = 경도, y = 위도), col = "red", alpha = 0.7) +
   geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8) +
   empty_theme 
-summary(ddarung)
 
 
-# 거치대 수 고려
-
+# 거치대 수 고려(안쓸듯)
+{
 library(RColorBrewer)
 display.brewer.all()
 pal = brewer.pal(7, "OrRd")
@@ -183,5 +172,80 @@ ggplot(data = seoullonglat) +
         axis.ticks = element_blank(),
         panel.background = element_blank()) + 
       scale_color_manual(values = pal) + labs(colour = "거치대수")
+}
 
-  
+
+###############################################################################
+# 따릉이 데이터 가공(위치정보, 설치일자, 잔존여부 통합)
+ddarung_date = read.table("./data/contest/date.csv",
+         stringsAsFactors = F, header = T,
+         sep = ",")
+str(ddarung_date)
+head(ddarung_date)
+
+# 1
+b = strsplit(ddarung_date$대여소명, "\\.")
+
+date_num = c()
+for(i in 1:nrow(ddarung_date)){
+  date_num[i] = head(b[[i]], 1)
+}
+date_num = as.numeric(date_num)
+
+
+ddarung_total = cbind(ddarung, NA)
+ddarung_total = rbind(ddarung, NA, NA)
+matching_num = match(date_num, ddarung$대여소번호)
+for(i in 1:nrow(ddarung_date)){
+  if(!is.na(date_num[i])){
+    a = matching_num[i]
+    ddarung_total[a, 7] = ddarung_date[i, 3]
+  }
+} 
+
+# 2
+date_null = ddarung_date[is.na(matching_num), ]
+
+b = strsplit(ddarung_total[,3], "\\.")
+ddarung_name = c()
+for(i in 1:length(b)){
+  ddarung_name[i] = tail(b[[i]], 1)
+}
+
+matching_num2 = match(date_null[,2], ddarung_name)
+ddarung_total[matching_num2, 3]
+date_null[,2] == ddarung_total[matching_num2, 3]
+ddarung_date[,2] == ddarung_total[matching_num, 3]
+
+for(i in 1:length(matching_num2)){
+  if(!is.na(matching_num2[i])){
+    a = matching_num2[i]
+    ddarung_total[a, 7] = date_null[i, 3]
+  }
+} 
+
+# 3 
+date_null[is.na(matching_num2),]
+ddarung_total[is.na(ddarung_total[,7]),]
+
+# 처리 과정에서 빠짐
+ddarung_total[1453, 7] = date_null[94, 3]
+
+date_final_null = date_null[is.na(matching_num2),]
+date_final_null = date_final_null[-1, ]
+
+# 설치 일자 데이터에는 있지만 위치정보 데이터에는 빠진 대여소도 추가 
+library(stringr)
+ddarung_real_name = str_trim(ddarung_name,"both")
+ddarung_total[1:length(ddarung_real_name), 3] = ddarung_real_name
+
+names(ddarung_total)[7] = "설치일자"
+
+final_ddarung = rbind(ddarung_total, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+final_ddarung = cbind(final_ddarung, NA)
+names(final_ddarung)[8] = "잔존여부"
+
+final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung), c(1, 3, 7)] = date_final_null
+final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung),]
+
+# 해야할 거 : 설치 일자 format 통합하기, 잔존여부 T/F 추가, 위치정보에 누락된 대여소들 정보(번호, 위치 정보) 추가
