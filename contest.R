@@ -235,6 +235,7 @@ date_final_null = date_null[is.na(matching_num2),]
 date_final_null = date_final_null[-1, ]
 
 # 설치 일자 데이터에는 있지만 위치정보 데이터에는 빠진 대여소도 추가 
+# 위치정보에는 있지만 설치 일자는 없는경우는 전부 폐쇄된 대여소였음
 library(stringr)
 ddarung_real_name = str_trim(ddarung_name,"both")
 ddarung_total[1:length(ddarung_real_name), 3] = ddarung_real_name
@@ -248,4 +249,57 @@ names(final_ddarung)[8] = "잔존여부"
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung), c(1, 3, 7)] = date_final_null
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung),]
 
-# 해야할 거 : 설치 일자 format 통합하기, 잔존여부 T/F 추가, 위치정보에 누락된 대여소들 정보(번호, 위치 정보) 추가
+# 폐쇄 대여소 정보 추가(잔존 여부 추가)
+library(stringr)
+library(dplyr)
+list.files("./data/contest")
+closed_ddarung = read.csv("./data/contest/서울특별시 공공자전거 폐쇄 대여소(2019.06.24).csv", stringsAsFactors = F,
+         fileEncoding = "UTF-8")
+b = strsplit(closed_ddarung[,2], "\\.") 
+num = c()
+name = c()
+length(b)
+for(i in 1:length(b)){
+  if(length(b[[i]]) == 2){
+    num[i] = b[[i]][1]
+    name[i] = str_trim(b[[i]][2], "both")
+  }else if(length(b[[i]] == 1)){
+    name[i] = str_trim(b[[i]], "both")
+  }else{
+    print("error")
+  }
+}
+closed_ddarung$대여소명 = name
+closed_ddarung = cbind(closed_ddarung, num)
+names(closed_ddarung)[5] = "대여소번호"
+num = as.numeric(num)
+closed_matching = match(name[!is.na(name)], final_ddarung$대여소명)
+final_ddarung[,8] = T
+final_ddarung[closed_matching[!is.na(closed_matching)], 8] = F
+closed_ddarung
+null_closed_ddarung = closed_ddarung[is.na(closed_matching),]
+
+# 설치 일자 format 통합
+format1 = str_detect(final_ddarung$설치일자, "^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}")
+format2 = str_detect(final_ddarung$설치일자, "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}") & !is.na(final_ddarung$설치일자)
+format3 = !(format1|format2) & !is.na(final_ddarung$설치일자)
+final_ddarung$설치일자[format2] = str_replace_all(final_ddarung$설치일자[format2], "\\.", "\\-")
+final_ddarung$설치일자[format3] = c("2018-07-04", "2018-07-04", "2018-05-30", "2018-10-02",
+                                "2018-09-20", "2018-07-04")
+v = str_detect(final_ddarung$설치일자, "^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}")
+all(v[!is.na(v)])
+
+final_ddarung$설치일자 = as.Date(final_ddarung$설치일자, "%F")
+
+str(final_ddarung)
+# 해야할 거 : 위치정보에 누락된 대여소들 정보(번호, 위치 정보, 거치대수) 추가
+# 대여소 번호 매기는 기준은? 빠진 번호는 왜빠졌을까ㅏㅏㅏㅏㅏ 설마 데이터 없나
+# 
+library(ggplot2)
+final_ddarung 
+seoulmap + 
+  geom_point(data = final_ddarung[final_ddarung$잔존여부,], aes(x = 경도, y = 위도), color = "darkorange", alpha = 0.7) +
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
+            size = 2.8) +
+  empty_theme 
+
