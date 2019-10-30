@@ -30,7 +30,7 @@ st_write(seoulmap, "./data/contest/seoul.shp",
          delete_layer = T)
 
 }
-getwd()
+
 ##############################################################################
 # 여기서부터 돌리면 됨
 library(sf)
@@ -195,7 +195,6 @@ date_num = as.numeric(date_num)
 
 
 ddarung_total = cbind(ddarung, NA)
-ddarung_total = rbind(ddarung, NA, NA)
 matching_num = match(date_num, ddarung$대여소번호)
 for(i in 1:nrow(ddarung_date)){
   if(!is.na(date_num[i])){
@@ -206,20 +205,25 @@ for(i in 1:nrow(ddarung_date)){
 
 # 2
 date_null = ddarung_date[is.na(matching_num), ]
-ddarung_total[998,]
 b = strsplit(ddarung_total[,3], "\\.")
 ddarung_name = c()
+
 for(i in 1:length(b)){
-  if(length(b[[i]]) > 2){
-    if(str_detect(b[[i]][1], "[0-9]+")){
+  if(str_detect(b[[i]][1], "^([0-9]+)$")){
+    if(length(b[[i]]) > 2){
+      print(b[[i]])
       ddarung_name[i] = paste(b[[i]][-1], collapse = ".")
-      print(ddarung_name[i])
     }else{
-      ddarung_name[i] = paste(b[[i]], collapse = ".")
-      print(ddarung_name[i])
-    }
+      ddarung_name[i] = tail(b[[i]], 1)
+    }  
   }else{
-    ddarung_name[i] = tail(b[[i]], 1)
+    if(length(b[[i]]) > 1){
+      print(b[[i]])
+      ddarung_name[i] = paste(b[[i]], collapse = ".")
+    }else{
+        ddarung_name[i] = b[[i]]
+      }  
+
   }
 }
 
@@ -248,24 +252,28 @@ date_final_null = date_null[is.na(matching_num2),]
 ddarung_real_name = str_trim(ddarung_name,"both")
 ddarung_total[1:length(ddarung_real_name), 3] = ddarung_real_name
 
-names(ddarung_total)[7] = "설치일자"
+colnames(ddarung_total)[7] = "설치일자"
 
-
-final_ddarung = rbind(ddarung_total, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+t = matrix(NA, nrow = nrow(date_final_null), ncol = 7)
+colnames(t) = colnames(ddarung_total)
+final_ddarung = rbind(ddarung_total, t)
 final_ddarung = cbind(final_ddarung, NA)
-names(final_ddarung)[8] = "잔존여부"
+colnames(final_ddarung)[8] = "잔존여부"
+tail(final_ddarung, 15)
 
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung), c(1, 3, 7)] = date_final_null
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung),]
-tail(final_ddarung)
+tail(final_ddarung, 15)
+
 # 폐쇄 대여소 정보 추가(잔존 여부 추가)
 
 closed_ddarung = read.csv("./data/contest/서울특별시 공공자전거 폐쇄 대여소(2019.06.24).csv", stringsAsFactors = F,
          fileEncoding = "UTF-8")
+
 b = strsplit(closed_ddarung[,2], "\\.") 
 num = rep(NA, length(b))
 name = rep(NA, length(b))
-length(b)
+
 for(i in 1:length(b)){
   if(length(b[[i]]) == 2){
     num[i] = b[[i]][1]
@@ -276,12 +284,13 @@ for(i in 1:length(b)){
     print("error")
   }
 }
+
 closed_ddarung$대여소명 = name
 num = as.numeric(num)
 length(num)
 
 closed_ddarung = cbind(closed_ddarung, num)
-names(closed_ddarung)[5] = "대여소번호"
+colnames(closed_ddarung)[5] = "대여소번호"
 
 closed_matching = match(name[!is.na(name)], final_ddarung$대여소명)
 final_ddarung[,8] = T
@@ -305,10 +314,3 @@ str(final_ddarung)
 # 해야할 거 : 위치정보에 누락된 대여소들 정보(번호, 위치 정보, 거치대수) 추가
 # 대여소 번호 매기는 기준은? 빠진 번호는 왜빠졌을까ㅏㅏㅏㅏㅏ 설마 데이터 없나
 # 
-library(ggplot2)
-final_ddarung
-
-
-library(plotly)
-
-seoulmap + plot_ly()
