@@ -30,7 +30,7 @@ st_write(seoulmap, "./data/contest/seoul.shp",
          delete_layer = T)
 
 }
-
+getwd()
 ##############################################################################
 # 여기서부터 돌리면 됨
 library(sf)
@@ -38,6 +38,7 @@ library(maptools)
 library(ggplot2)
 library(sp)
 library(dplyr)
+library(stringr)
 
 seoulmap = st_read("./data/contest/seoul.shp", stringsAsFactors = F)
 Encoding(seoulmap$SIG_KOR_NM) = "CP949"
@@ -205,11 +206,21 @@ for(i in 1:nrow(ddarung_date)){
 
 # 2
 date_null = ddarung_date[is.na(matching_num), ]
-
+ddarung_total[998,]
 b = strsplit(ddarung_total[,3], "\\.")
 ddarung_name = c()
 for(i in 1:length(b)){
-  ddarung_name[i] = tail(b[[i]], 1)
+  if(length(b[[i]]) > 2){
+    if(str_detect(b[[i]][1], "[0-9]+")){
+      ddarung_name[i] = paste(b[[i]][-1], collapse = ".")
+      print(ddarung_name[i])
+    }else{
+      ddarung_name[i] = paste(b[[i]], collapse = ".")
+      print(ddarung_name[i])
+    }
+  }else{
+    ddarung_name[i] = tail(b[[i]], 1)
+  }
 }
 
 matching_num2 = match(date_null[,2], ddarung_name)
@@ -228,19 +239,17 @@ for(i in 1:length(matching_num2)){
 date_null[is.na(matching_num2),]
 ddarung_total[is.na(ddarung_total[,7]),]
 
-# 처리 과정에서 빠짐
-ddarung_total[1453, 7] = date_null[94, 3]
-
 date_final_null = date_null[is.na(matching_num2),]
-date_final_null = date_final_null[-1, ]
+
 
 # 설치 일자 데이터에는 있지만 위치정보 데이터에는 빠진 대여소도 추가 
 # 위치정보에는 있지만 설치 일자는 없는경우는 전부 폐쇄된 대여소였음
-library(stringr)
+
 ddarung_real_name = str_trim(ddarung_name,"both")
 ddarung_total[1:length(ddarung_real_name), 3] = ddarung_real_name
 
 names(ddarung_total)[7] = "설치일자"
+
 
 final_ddarung = rbind(ddarung_total, NA, NA, NA, NA, NA, NA, NA, NA, NA)
 final_ddarung = cbind(final_ddarung, NA)
@@ -248,16 +257,14 @@ names(final_ddarung)[8] = "잔존여부"
 
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung), c(1, 3, 7)] = date_final_null
 final_ddarung[(nrow(ddarung) + 1):nrow(final_ddarung),]
-
+tail(final_ddarung)
 # 폐쇄 대여소 정보 추가(잔존 여부 추가)
-library(stringr)
-library(dplyr)
-list.files("./data/contest")
+
 closed_ddarung = read.csv("./data/contest/서울특별시 공공자전거 폐쇄 대여소(2019.06.24).csv", stringsAsFactors = F,
          fileEncoding = "UTF-8")
 b = strsplit(closed_ddarung[,2], "\\.") 
-num = c()
-name = c()
+num = rep(NA, length(b))
+name = rep(NA, length(b))
 length(b)
 for(i in 1:length(b)){
   if(length(b[[i]]) == 2){
@@ -270,9 +277,12 @@ for(i in 1:length(b)){
   }
 }
 closed_ddarung$대여소명 = name
+num = as.numeric(num)
+length(num)
+
 closed_ddarung = cbind(closed_ddarung, num)
 names(closed_ddarung)[5] = "대여소번호"
-num = as.numeric(num)
+
 closed_matching = match(name[!is.na(name)], final_ddarung$대여소명)
 final_ddarung[,8] = T
 final_ddarung[closed_matching[!is.na(closed_matching)], 8] = F
@@ -296,10 +306,9 @@ str(final_ddarung)
 # 대여소 번호 매기는 기준은? 빠진 번호는 왜빠졌을까ㅏㅏㅏㅏㅏ 설마 데이터 없나
 # 
 library(ggplot2)
-final_ddarung 
-seoulmap + 
-  geom_point(data = final_ddarung[final_ddarung$잔존여부,], aes(x = 경도, y = 위도), color = "darkorange", alpha = 0.7) +
-  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
-            size = 2.8) +
-  empty_theme 
+final_ddarung
 
+
+library(plotly)
+
+seoulmap + plot_ly()
