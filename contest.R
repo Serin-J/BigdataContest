@@ -118,6 +118,7 @@ empty_theme = theme(legend.position = "right",
                     panel.background = element_blank()) 
 
 
+
 # 컬러 버전
 
 ggplot(data = seoullonglat) + 
@@ -178,7 +179,8 @@ ggplot(data = seoullonglat) +
 
 ###############################################################################
 # 따릉이 데이터 가공(위치정보, 설치일자, 잔존여부 통합)
-ddarung_date = read.table("./data/contest/date.csv",
+{
+  ddarung_date = read.table("./data/contest/date.csv",
          stringsAsFactors = F, header = T,
          sep = ",")
 str(ddarung_date)
@@ -311,6 +313,19 @@ all(v[!is.na(v)])
 final_ddarung$설치일자 = as.Date(final_ddarung$설치일자, "%F")
 
 str(final_ddarung)
+}
 # 해야할 거 : 위치정보에 누락된 대여소들 정보(번호, 위치 정보, 거치대수) 추가
 # 대여소 번호 매기는 기준은? 빠진 번호는 왜빠졌을까ㅏㅏㅏㅏㅏ 설마 데이터 없나
 # 
+
+save(seoullonglat, seoul_gu_center, file = "./data/contest/seoulmap.RData")
+
+save(final_ddarung, date_final_null, null_closed_ddarung, file = "./data/contest/ddarung_gcd.RData")
+
+load("./data/contest/ddarung_gcd.RData")
+
+seoulmap + 
+  geom_point(data = final_ddarung, aes(x = 경도, y = 위도), col = "darkorange", alpha = 0.7) +
+  geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
+            size = 2.8) +
+  empty_theme 
