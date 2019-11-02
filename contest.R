@@ -319,8 +319,8 @@ str(final_ddarung)
 # 
 
 save(seoullonglat, seoul_gu_center, file = "./data/contest/seoulmap.RData")
-
-save(final_ddarung, date_final_null, null_closed_ddarung, file = "./data/contest/ddarung_gcd.RData")
+# 업데이트함
+# save(final_ddarung, date_final_null, null_closed_ddarung, file = "./data/contest/ddarung_gcd.RData")
 
 load("./data/contest/ddarung_gcd.RData")
 
