@@ -145,7 +145,6 @@ str(ddarung_road)
 date_final_null
 save(final_ddarung, date_final_null, null_closed_ddarung, file = "./data/contest/ddarung_gcd.RData")
 load("./data/contest/ddarung_gcd.RData")
-load("./data/contest/ddarung18.10-19.5.RData")
 ddarung_road89 = ddarung_road
 save(ddarung_road89, file = "./data/contest/ddarung18.10-19.5.RData")
 ddarung_road89[[1]][(is.na(ddarung_road89[[1]][3])),]
@@ -175,7 +174,6 @@ tail(final_ddarung, 18)
 
 # 아마 깃허브에는 ddarung_gcd_new라는 이름으로 올릴거임
 save(final_ddarung, date_final_null, null_closed_ddarung, file = "./data/contest/ddarung_gcd.RData")
-load("./data/contest/ddarung15.9-17.12.RData")
 
 null_num1 = vector(mode = "list")
 null_num2 = vector(mode = "list")
@@ -204,15 +202,3 @@ str(ddarung_road567[[1]])
 d
 str(final_ddarung)
 as.integer()
-uni
-
-rm(list = ls())
-gc()
-load("./data/contest/ddarung_gcd.RData")
-tail(final_ddarung, 20)
-load("./data/contest/ddarung15.9-17.12.RData")
-
-for(i in 1:9){
-  ddarung_road567[[i]][null_num1[[i]],] %>% select(대여대여소명) %>% unique() %>% print()
-  ddarung_road567[[i]][null_num2[[i]],] %>% select(반납대여소명) %>% unique() %>% print()
-}
