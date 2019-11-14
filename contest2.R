@@ -55,8 +55,6 @@ for(i in 1:3){
 ddarung_freq[[2]]
 
 
-save(ddarung_road, ddarung_freq, file = "./data/contest/ddarung18.10-19.5.RData")
-
 rm(list = ls())
 gc()
 load("./data/contest/ddarung_gcd.RData")

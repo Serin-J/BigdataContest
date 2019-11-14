@@ -135,6 +135,7 @@ seoulmap = ggplot(data = seoullonglat) +
                fill = "lightgrey", col = "white", size = 1) + empty_theme
 
 seoulmap +
+  geom_point(data = final_ddarung, aes(x = 경도, y = 위도), col = "darkblue") +
   geom_text(data = seoul_gu_center, aes(label = group, x = long, y = lat), 
             size = 2.8)
 

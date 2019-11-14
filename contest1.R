@@ -3,9 +3,12 @@ gc()
 
 # 한국 mapdata에서 서울만 추출
 {
-  
 library(sf)
 library(maptools)
+maptools
+maptools::
+library(sp)
+sf::
 list.files("./sigungu_mapdata")
 
 si_gun_gu = st_read("./sigungu_mapdata/TL_SCCO_SIG.shp",
@@ -98,8 +101,8 @@ seoul_gu_center = mean_longlat
 seoul_gu_center$group = as.character(seoul_gu_center$group)
 ?Encoding
 ?write.csv
+seoul_gu_center[10, 2] = "도봉구"
 write.csv(seoul_gu_center, "./data/contest/seoul_gu_center.csv", fileEncoding = "CP949")
-
 
 }
 
